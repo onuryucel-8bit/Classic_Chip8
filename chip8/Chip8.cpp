@@ -52,7 +52,53 @@ void Chip8::update(bool* keys) {
 		chip.keys[i] = keys[i];
 	}
 
-	command.runCommands(&chip);
+	//execute wait for keys command
+	if (chip.flag == 4) {
+		uint16_t regX = command.getLastInstruction() & 0x0f00;
+		regX >>= 8;
+
+		for (size_t i = 0; i < 16; i++) {
+
+			if (chip.keys[i]) {
+				chip.registerFile[regX] = (uint8_t)(i);
+			}
+		}
+
+		chip.flag = 0;
+
+	}else if (chip.inputFlag == 1) {
+
+		if (chip.keys[command.getInputVx()]) {
+
+			chip.keys[command.getInputVx()] = false;
+			chip.flag = 5;
+		}
+		else {
+			chip.programCounter += 2;
+		}
+
+		chip.inputFlag = 0;
+		chip.flag = 5;
+
+	}
+
+	else if (chip.inputFlag == 2) {
+
+		if (chip.keys[command.getInputVx()] == true) {
+			chip.programCounter += 2;
+		}
+
+		chip.inputFlag = 0;
+		chip.flag = 5;
+	}
+	else {
+
+		command.runCommands(&chip);
+	}
+
+	for (size_t i = 0; i < 16; i++) {
+		chip.keys[i] = false;
+	}
 }
 
 ch8::CPU* Chip8::getCPU()

@@ -28,5 +28,6 @@ namespace ch8 {
 		bool keys[16];
 
 		unsigned char flag;
+		unsigned char inputFlag;
 	};
 }

@@ -4,6 +4,8 @@
 
 void Window_SFML::createSound() {
 
+	std::cout << "soundFile DIR: " << CURRENT_DIRECTORY + "\\res\\ch8_squareWave.wav\n";
+
 	if (!buffer.loadFromFile(CURRENT_DIRECTORY + "\\res\\ch8_squareWave.wav")) {
 		std::cout << "ERROR : failed the load sound file \n";
 	}
@@ -145,9 +147,9 @@ void Window_SFML::getInputs() {
 }
 
 void Window_SFML::updateKeys() {
-	/*for (char i = 0; i < 16; i++){
-		keys[i] = chip.keys[i];
-	}*/
+	for (char i = 0; i < 16; i++){
+		keys[i] = chip.getCPU()->keys[i];
+	}
 }
 
 void Window_SFML::clearScreen() {
@@ -176,33 +178,82 @@ void Window_SFML::waitForKeys() {
 	}
 }
 
+void Window_SFML::reFreshScreen() {
+	for (size_t i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
+
+		if (chip.getCPU()->display[i] == 0x00) {
+			pixels[i].setFillColor(sf::Color::Black);
+
+		}
+		else if ((chip.getCPU()->display[i] & 0x80) == 0x80) {
+
+			uint8_t color = chip.getCPU()->display[i] & 0x0f;
+
+			switch (color)
+			{
+			case 0x00:
+				pixels[i].setFillColor(sf::Color::White);
+				break;
+
+			case 0x01:
+				pixels[i].setFillColor(sf::Color::Red);
+				break;
+
+			case 0x02:
+				pixels[i].setFillColor(sf::Color::Green);
+				break;
+
+			case 0x03:
+				pixels[i].setFillColor(sf::Color::Blue);
+				break;
+
+			case 0x04:
+				pixels[i].setFillColor(sf::Color::Cyan);
+				break;
+
+			case 0x05:
+				pixels[i].setFillColor(sf::Color::Yellow);
+				break;
+
+			case 0x06://orange
+				pixels[i].setFillColor(sf::Color(255, 165, 0));
+				break;
+			}
+
+
+		}
+	}
+
+}
+
 void Window_SFML::updateChip8() {
+
+
 
 	chip.update(keys);
 
 	if (chip.getCPU()->flag == 1) {
 		clearScreen();
 	}
-	//else if (flag == 2) {
-	//	reFreshScreen();
+	else if (chip.getCPU()->flag == 2) {
+		reFreshScreen();
+	}
+	else if (chip.getCPU()->flag == 3) {
+		waitForKeys();
 
-	//}
-	//else if (flag == 3) {
-	//	waitForKeys();
+		chip.getCPU()->flag = 4;
+		//execute wait for key command
+		chip.update(keys);
 
-	//	chip_8.setFlag(4);
-	//	//execute wait for key command
-	//	flag = chip.update(keys);
+	}
+	else if(chip.getCPU()->flag == 5){
+		updateKeys();
+	}
 
-	//	
-	//}
-	//else if(flag == 5){
-	//	updateKeys();
-	//}
+	if (chip.getCPU()->soundTimer > 0) {
+		sound.play();
+	}
 
-	//if (chip.soundTimer > 0) {
-	//	sound.play();
-	//}
 
 	flag = 0;
 }
@@ -210,27 +261,27 @@ void Window_SFML::updateChip8() {
 #pragma region drawCommands
 
 void Window_SFML::drawTexts() {
-	/*for (size_t i = 0; i < 16; i++) {
-		regs[i].setString("V" + std::to_string(i) + ":" + rdx::toHex(chip_8.registerFile[i]));
+	for (size_t i = 0; i < 16; i++) {
+		regs[i].setString("V" + std::to_string(i) + ":" + rdx::toHex(chip.getCPU()->registerFile[i]));
 		m_windowInfo->draw(regs[i]);
 
-		keyboard[i].setString("Key " + rdx::toHex(i) + ":" + std::to_string( keys[i]));
+		keyboard[i].setString("Key " + rdx::toHex((uint16_t)(i)) + ":" + std::to_string(keys[i]));
 		m_windowInfo->draw(keyboard[i]);
 	}
 
-	PC.setString("PC:" + rdx::toHex(chip_8.programCounter));
+	PC.setString("PC:" + rdx::toHex(chip.getCPU()->programCounter));
 	m_windowInfo->draw(PC);
 
-	indexReg.setString("I:" + rdx::toHex(chip_8.indexRegister));
+	indexReg.setString("I:" + rdx::toHex(chip.getCPU()->indexRegister));
 	m_windowInfo->draw(indexReg);
 
-	SP.setString("SP:" + rdx::toHex(chip_8.stackPointer));
+	SP.setString("SP:" + rdx::toHex(chip.getCPU()->stackPointer));
 	m_windowInfo->draw(SP);
 
-	delayTimer.setString("DT:" + rdx::toHex(chip_8.delayTimer));
+	delayTimer.setString("DT:" + rdx::toHex(chip.getCPU()->delayTimer));
 	m_windowInfo->draw(delayTimer);
-	soundTimer.setString("ST:" + rdx::toHex(chip_8.soundTimer));
-	m_windowInfo->draw(soundTimer);*/
+	soundTimer.setString("ST:" + rdx::toHex(chip.getCPU()->soundTimer));
+	m_windowInfo->draw(soundTimer);
 }
 
 //draw sf::rectangle array pixels[]
@@ -243,7 +294,8 @@ void Window_SFML::drawPixels() {
 #pragma endregion
 
 void Window_SFML::run(std::string romFile) {
-
+	
+	
 	for (size_t i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
 		pixels[i].setFillColor(sf::Color::Yellow);
 	}
@@ -279,9 +331,9 @@ void Window_SFML::run(std::string romFile) {
 		//--------------------//
 
 		updateChip8();
-	//	getInputs();
+		getInputs();
 		drawPixels();
-	//	drawTexts();
+		drawTexts();
 
 		
 		//--------------------//

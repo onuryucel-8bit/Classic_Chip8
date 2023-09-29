@@ -8,6 +8,7 @@
 #include "../chip8/TypesChip8.h"
 #include "../chip8/RomLoader.h"
 #include "../chip8/Chip8.h"
+#include "../utils/Radix.h"
 
 
 class Window_SFML
@@ -58,6 +59,7 @@ private:
 
 	void drawTexts();
 
+	void reFreshScreen();
 	void clearScreen();
 
 	void updateChip8();

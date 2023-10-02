@@ -71,7 +71,20 @@ void Window_SFML::createPixels() {
 
 		pixels[i].setSize(sf::Vector2f(xoff, yoff));
 		pixels[i].setPosition(x, y);
-		pixels[i].setFillColor(sf::Color::Black);
+
+		if(background == BLACK)
+			pixels[i].setFillColor(sf::Color::Black);
+		else if(background == WHITE)
+			pixels[i].setFillColor(sf::Color::White);
+		else if (background == GREEN)
+			pixels[i].setFillColor(sf::Color::Green);
+		else if (background == BLUE)
+			pixels[i].setFillColor(sf::Color::Blue);
+		else if (background == RED)
+			pixels[i].setFillColor(sf::Color::Red);
+		else if (background == YELLOW)
+			pixels[i].setFillColor(sf::Color::Yellow);
+
 		x += xoff;
 
 		if (x >= SCREEN_WIDTH * RESIZE_SCREEN_WIDTH) {
@@ -91,8 +104,15 @@ void Window_SFML::createWindows() {
 	m_windowInfo->setPosition(sf::Vector2i(0, 0));
 }
 
-Window_SFML::Window_SFML(std::string CURRENT_DIRECTORY){
+Window_SFML::Window_SFML(std::string CURRENT_DIRECTORY,SCREEN_COLOR backColor,SCREEN_COLOR frontColor){
 	this->CURRENT_DIRECTORY = CURRENT_DIRECTORY;
+
+	background = backColor;
+	frontground = frontColor;
+
+	if (background == frontground) {
+		std::cout << "ERROR : background is same as frontground \n";
+	}
 
 	createWindows();
 	createPixels();
@@ -100,13 +120,19 @@ Window_SFML::Window_SFML(std::string CURRENT_DIRECTORY){
 	createSound();
 
 
-	flag = 0;
 }
 
 #pragma endregion
 
-void Window_SFML::getInputs() {
+#pragma region update
 
+void Window_SFML::getInputs() {
+	/*
+		1	2	3	C
+		4	5	6	D
+		7	8	9	E
+		A	0	B	F
+	*/
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num1))
 		keys[0] = true;
 	else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num2))
@@ -146,12 +172,6 @@ void Window_SFML::getInputs() {
 		keys[15] = true;
 }
 
-void Window_SFML::updateKeys() {
-	for (char i = 0; i < 16; i++){
-		keys[i] = chip.getCPU()->keys[i];
-	}
-}
-
 void Window_SFML::clearScreen() {
 	for (size_t i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
 		pixels[i].setFillColor(sf::Color::Black);
@@ -161,7 +181,13 @@ void Window_SFML::clearScreen() {
 void Window_SFML::waitForKeys() {
 
 	while (true) {
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)) { keys[4] = true; break; }
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num1)) { keys[0] = true; break; }
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num2)) { keys[1] = true; break; }
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num3)) { keys[2] = true; break; }
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num4)) { keys[3] = true; break; }
+
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)) { keys[4] = true; break; }
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)) { keys[5] = true; break; }
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) { keys[6] = true; break; }
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)) { keys[7] = true; break; }
@@ -182,45 +208,35 @@ void Window_SFML::reFreshScreen() {
 	for (size_t i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
 
 		if (chip.getCPU()->display[i] == 0x00) {
-			pixels[i].setFillColor(sf::Color::Black);
-
-		}
-		else if ((chip.getCPU()->display[i] & 0x80) == 0x80) {
-
-			uint8_t color = chip.getCPU()->display[i] & 0x0f;
-
-			switch (color)
-			{
-			case 0x00:
+			
+			
+			if (background == BLACK)
+				pixels[i].setFillColor(sf::Color::Black);
+			else if (background == WHITE)
 				pixels[i].setFillColor(sf::Color::White);
-				break;
-
-			case 0x01:
-				pixels[i].setFillColor(sf::Color::Red);
-				break;
-
-			case 0x02:
+			else if (background == GREEN)
 				pixels[i].setFillColor(sf::Color::Green);
-				break;
-
-			case 0x03:
+			else if (background == BLUE)
 				pixels[i].setFillColor(sf::Color::Blue);
-				break;
-
-			case 0x04:
-				pixels[i].setFillColor(sf::Color::Cyan);
-				break;
-
-			case 0x05:
+			else if (background == RED)
+				pixels[i].setFillColor(sf::Color::Red);
+			else if (background == YELLOW)
 				pixels[i].setFillColor(sf::Color::Yellow);
-				break;
-
-			case 0x06://orange
-				pixels[i].setFillColor(sf::Color(255, 165, 0));
-				break;
-			}
-
-
+				
+		}
+		else {
+			if (frontground == BLACK)
+				pixels[i].setFillColor(sf::Color::Black);
+			else if (frontground == WHITE)
+				pixels[i].setFillColor(sf::Color::White);
+			else if (frontground == GREEN)
+				pixels[i].setFillColor(sf::Color::Green);
+			else if (frontground == BLUE)
+				pixels[i].setFillColor(sf::Color::Blue);
+			else if (frontground == RED)
+				pixels[i].setFillColor(sf::Color::Red);
+			else if (frontground == YELLOW)
+				pixels[i].setFillColor(sf::Color::Yellow);
 		}
 	}
 
@@ -228,6 +244,17 @@ void Window_SFML::reFreshScreen() {
 
 void Window_SFML::updateChip8() {
 
+	if (chip.getCPU()->programCounter < 0x200) {
+		return;
+	}
+
+	clock.restart();
+	while (true) {
+		time = clock.getElapsedTime();
+		if (time.asMilliseconds() >= 100) {
+			break;
+		}
+	}
 
 
 	chip.update(keys);
@@ -246,23 +273,25 @@ void Window_SFML::updateChip8() {
 		chip.update(keys);
 
 	}
-	else if(chip.getCPU()->flag == 5){
-		updateKeys();
-	}
-
+	
 	if (chip.getCPU()->soundTimer > 0) {
 		sound.play();
 	}
 
+	for (char i = 0; i < 16; i++) {
+		keys[i] = false;
+	}
 
-	flag = 0;
 }
+
+#pragma endregion
 
 #pragma region drawCommands
 
 void Window_SFML::drawTexts() {
+
 	for (size_t i = 0; i < 16; i++) {
-		regs[i].setString("V" + std::to_string(i) + ":" + rdx::toHex(chip.getCPU()->registerFile[i]));
+		regs[i].setString("V" + rdx::toHex((uint16_t)i) + ":" + rdx::toHex(chip.getCPU()->registerFile[i]));
 		m_windowInfo->draw(regs[i]);
 
 		keyboard[i].setString("Key " + rdx::toHex((uint16_t)(i)) + ":" + std::to_string(keys[i]));
@@ -296,10 +325,6 @@ void Window_SFML::drawPixels() {
 void Window_SFML::run(std::string romFile) {
 	
 	
-	for (size_t i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
-		pixels[i].setFillColor(sf::Color::Yellow);
-	}
-
 	if (!loader.load(chip.getCPU(), romFile)) {
 		m_window->close();
 		m_windowInfo->close();

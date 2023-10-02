@@ -18,6 +18,7 @@ namespace ch8 {
 		instruction |= chip->ram[chip->programCounter];
 		chip->programCounter++;
 
+		
 		uint16_t instructionGroup;
 
 		switch (instruction & 0xf000)
@@ -191,6 +192,7 @@ namespace ch8 {
 
 	void Commands::JMP_1nnn(CPU* chip){
 		chip->programCounter = instruction & 0x0fff;
+		
 	}
 
 	void Commands::CALL_2nnn(CPU* chip){
@@ -395,7 +397,6 @@ namespace ch8 {
 
 		uint8_t spriteByte;
 		uint8_t spritePixel;
-		uint8_t color;
 
 		uint8_t screenPixel;
 		size_t startingPos;
@@ -406,7 +407,7 @@ namespace ch8 {
 
 			spriteByte = chip->ram[chip->indexRegister + row];
 
-			for (uint8_t col = 0; col < 4; col++) {
+			for (uint8_t col = 0; col < 8; col++) {
 
 				startingPos = Vy * SCREEN_WIDTH + Vx;
 
@@ -416,8 +417,8 @@ namespace ch8 {
 				screenPixel = chip->display[startingPos] >> 7;
 
 				//check collision
-				if ((screenPixel ^ spritePixel) == screenPixel) {
-					chip->registerFile[0xf] = 1;
+				if ((screenPixel == 1 && spritePixel == 1)) {
+					chip->registerFile[0xf] = 1; // Collision occurred
 				}
 
 				//             1 = 0^1
@@ -426,11 +427,7 @@ namespace ch8 {
 				//copying for color values i cant find logical operation for this
 				//11 = 1 / 10 = 0 / 01 = 1 / 00 = 0
 
-
-				screenPixel <<= 7;
-				color = spriteByte & 0x0f;
-
-				chip->display[startingPos] = screenPixel | color;
+				chip->display[startingPos] = screenPixel ;
 
 				Vx++;
 				if (Vx > 63)
@@ -451,21 +448,36 @@ namespace ch8 {
 	}
 
 	void Commands::SKP_Ex9E(CPU* chip) {
+		//take register Vx index
 		uint16_t regX = instruction & 0x0f00;
 		regX >>= 8;
 
-		inputVx = chip->registerFile[regX];
+		//for code errors : if Vx = 0xff registerFile[Vx] gonna give index of bound error
+		if (chip->registerFile[regX] > 0xf) {
+			return;
+		}
 
-		chip->inputFlag = 1;
+		//if key pressed
+		if (chip->keys[chip->registerFile[regX]]) {
+			chip->programCounter += 2;
+		}
+	
 	}
 
 	void Commands::SKNP_ExA1(CPU* chip) {
 		uint16_t regX = instruction & 0x0f00;
 		regX >>= 8;
 
-		inputVx = chip->registerFile[regX];
+		//for code errors : if Vx = 0xff registerFile[Vx] gonna give index of bound error
+		if (chip->registerFile[regX] > 0xf) {
+			return;
+		}
 
-		chip->inputFlag = 2;
+		//if key pressed
+		if (chip->keys[chip->registerFile[regX]] == false) {
+			chip->programCounter += 2;
+		}
+
 	}
 
 	void Commands::LDD_Fx07(CPU* chip) {

@@ -13,6 +13,8 @@ public:
 
 	void update(bool* keys);
 
+	void reset();
+
 	ch8::CPU* getCPU();
 
 private:

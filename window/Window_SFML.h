@@ -10,17 +10,27 @@
 #include "../chip8/Chip8.h"
 #include "../utils/Radix.h"
 
+enum SCREEN_COLOR{
+	BLACK,
+	WHITE,
+	BLUE,
+	GREEN,
+	RED,
+	YELLOW
+};
 
 class Window_SFML
 {
 public:
-	Window_SFML(std::string CURRENT_DIRECTORY);
+	Window_SFML(std::string CURRENT_DIRECTORY, SCREEN_COLOR backColor, SCREEN_COLOR frontColor);
 	~Window_SFML();
 
 	void run(std::string romFile);
 
-	uint8_t flag;
 private:
+
+	SCREEN_COLOR background;
+	SCREEN_COLOR frontground;
 
 	RomLoader loader;
 
@@ -36,8 +46,11 @@ private:
 	sf::RectangleShape pixels[SCREEN_WIDTH * SCREEN_HEIGHT];
 
 	sf::SoundBuffer buffer;
+	sf::Sound sound;
+	
 	sf::Font font;
 
+	//-----for printing chip8 values-------
 	sf::Text regs[16];
 	sf::Text keyboard[16];
 	sf::Text PC;//program counter
@@ -46,8 +59,10 @@ private:
 
 	sf::Text delayTimer;
 	sf::Text soundTimer;
-
-	sf::Sound sound;
+	//-------------------------------------
+	
+	sf::Clock clock;
+	sf::Time time;
 
 	void createPixels();
 	void createWindows();

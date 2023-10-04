@@ -1,0 +1,8 @@
+/.vs/EMU_Chip8/v16/*.db
+/.vs/EMU_Chip8/v16/*.db-shm
+/.vs/EMU_Chip8/v16/*.db-wal
+/*.sln
+/*.vcxproj
+/*.filters
+/*.user
+/.vs/EMU_Chip8/v16/*.opendb
